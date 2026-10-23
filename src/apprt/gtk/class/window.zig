@@ -9,6 +9,7 @@ const gobject = @import("gobject");
 const gtk = @import("gtk");
 
 const i18n = @import("../../../os/main.zig").i18n;
+const kestrel_hint = @import("../../../kestrel_hint.zig");
 const apprt = @import("../../../apprt.zig");
 const configpkg = @import("../../../config.zig");
 const TitlebarStyle = configpkg.Config.GtkTitlebarStyle;
@@ -1194,6 +1195,10 @@ pub const Window = extern struct {
         self: *Self,
     ) callconv(.c) void {
         const priv = self.private();
+
+        // Kestrel: a focused terminal keeps hint 2; when no window is active
+        // the process falls back to the broker's cgroup class.
+        kestrel_hint.setProcess(if (self.as(gtk.Window).isActive() != 0) 2 else 0);
 
         // Use a timeout callback to wait for focus state to settle,
         // because depending on the windowing backend the window might

@@ -12,6 +12,7 @@
 pub const Thread = @This();
 
 const std = @import("std");
+const kestrel_hint = @import("../kestrel_hint.zig");
 const ArenaAllocator = std.heap.ArenaAllocator;
 const builtin = @import("builtin");
 const global = @import("../global.zig");
@@ -134,6 +135,10 @@ pub fn deinit(self: *Thread) void {
 
 /// The main entrypoint for the thread.
 pub fn threadMain(self: *Thread, io: *termio.Termio) void {
+    // Kestrel: hint 2 (terminal) on this thread, which did not exist when the
+    // app process was hinted at startup.
+    kestrel_hint.setCurrentThread(2);
+
     // Call child function so we can use errors...
     self.threadMain_(io) catch |err| {
         log.warn("error in io thread err={}", .{err});

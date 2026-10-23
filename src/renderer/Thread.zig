@@ -3,6 +3,7 @@
 pub const Thread = @This();
 
 const std = @import("std");
+const kestrel_hint = @import("../kestrel_hint.zig");
 const builtin = @import("builtin");
 const global = @import("../global.zig");
 const xev = global.xev;
@@ -190,6 +191,10 @@ pub fn deinit(self: *Thread) void {
 
 /// The main entrypoint for the thread.
 pub fn threadMain(self: *Thread) void {
+    // Kestrel: hint 2 (terminal) on this thread, which did not exist when the
+    // app process was hinted at startup.
+    kestrel_hint.setCurrentThread(2);
+
     // Call child function so we can use errors...
     self.threadMain_() catch |err| {
         // In the future, we should expose this on the thread struct.

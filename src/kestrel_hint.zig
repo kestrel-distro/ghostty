@@ -35,7 +35,7 @@ const SchedAttrExt = extern struct {
 };
 
 /// Set the hint on one task. No-op (the syscall fails) on a stock kernel.
-fn setTid(tid: c.pid_t, hint: u32) void {
+pub fn setTid(tid: c.pid_t, hint: u32) void {
     if (builtin.os.tag != .linux) return;
     var attr = SchedAttrExt{
         .size = @sizeOf(SchedAttrExt),
@@ -51,6 +51,13 @@ fn setTid(tid: c.pid_t, hint: u32) void {
         .sched_ext_hint = hint,
     };
     _ = c.syscall(c.SYS_sched_setattr, tid, &attr, @as(c_uint, 0));
+}
+
+/// Set the hint on the calling thread. Threads spawned after a
+/// setProcess() call are not covered; call this from the thread entrypoint.
+pub fn setCurrentThread(hint: u32) void {
+    if (builtin.os.tag != .linux) return;
+    setTid(c.gettid(), hint);
 }
 
 /// Set the hint on every thread of this process.
