@@ -1,0 +1,30 @@
+# Maintainer: Kestrel <https://github.com/kestrel-distro>
+pkgname=ghostty-kestrel
+pkgver=1.3.2
+pkgrel=1
+pkgdesc='Ghostty with the Kestrel per-task scheduling hint'
+arch=(x86_64)
+url='https://github.com/kestrel-distro/ghostty'
+license=(MIT)
+depends=(bzip2 fontconfig freetype2 glib2 gtk4 gtk4-layer-shell libx11
+         harfbuzz libadwaita libpng oniguruma pixman wayland zlib)
+makedepends=(blueprint-compiler pandoc-cli zig git)
+provides=(ghostty)
+conflicts=(ghostty)
+source=()
+sha256sums=()
+
+build() {
+    cd "${startdir}/../.."
+    ZIG_GLOBAL_CACHE_DIR="$srcdir/zig-global-cache/" ./nix/build-support/fetch-zig-cache.sh
+    DESTDIR="$srcdir/build" zig build --summary all --prefix /usr \
+        --system "$srcdir/zig-global-cache/p" \
+        -Doptimize=ReleaseFast -Dgtk-x11=true -Dcpu=baseline -Dpie=true \
+        -Demit-docs -Dversion-string="${pkgver}-kestrel${pkgrel}" --build-id=sha1
+}
+
+package() {
+    cd "${startdir}/../.."
+    cp -a "$srcdir/build/." "$pkgdir/"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
