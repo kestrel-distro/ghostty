@@ -27,5 +27,11 @@ build() {
 package() {
     cd "${startdir}/../.."
     cp -a "$srcdir/build/." "$pkgdir/"
+
+    # ncurses owns /usr/share/terminfo/g/ghostty. Keep the xterm-ghostty
+    # entry, which no other package provides, and drop the duplicate.
+    rm -f "$pkgdir/usr/share/terminfo/g/ghostty"
+    rmdir "$pkgdir/usr/share/terminfo/g" 2>/dev/null || true
+
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
