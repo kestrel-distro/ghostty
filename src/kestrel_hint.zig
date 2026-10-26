@@ -65,7 +65,7 @@ pub fn setProcess(hint: u32) void {
     if (builtin.os.tag != .linux) return;
     setTid(std.os.linux.getpid(), hint);
 
-    var dir = std.fs.openDirAbsolute("/proc/self/task", .{ .iterate = true }) catch return;
+    var dir = std.fs.cwd().openDir("/proc/self/task", .{ .iterate = true }) catch return;
     defer dir.close();
     var it = dir.iterate();
     while (it.next() catch null) |entry| {
