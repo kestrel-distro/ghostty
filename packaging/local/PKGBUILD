@@ -16,9 +16,10 @@ sha256sums=()
 
 build() {
     cd "${startdir}/../.."
-    ZIG_GLOBAL_CACHE_DIR="$srcdir/zig-global-cache/" ./nix/build-support/fetch-zig-cache.sh
+    # Zig 0.17 fetches packages into its own cache; the pre-0.17
+    # fetch-zig-cache.sh + --system pair leaves tarballs where the build
+    # expects extracted package directories.
     DESTDIR="$srcdir/build" zig build --summary all --prefix /usr \
-        --system "$srcdir/zig-global-cache/p" \
         -Doptimize=ReleaseFast -Dgtk-x11=true -Dcpu=baseline -Dpie=true \
         -Demit-docs -Dversion-string="${pkgver}-kestrel${pkgrel}" --build-id=sha1
 }
