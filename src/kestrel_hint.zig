@@ -60,16 +60,9 @@ pub fn setCurrentThread(hint: u32) void {
     setTid(std.os.linux.gettid(), hint);
 }
 
-/// Set the hint on every thread of this process.
+/// Set the hint on the process' main thread. Threads created later are not
+/// covered; the renderer and IO threads call setCurrentThread() themselves.
 pub fn setProcess(hint: u32) void {
     if (builtin.os.tag != .linux) return;
     setTid(std.os.linux.getpid(), hint);
-
-    var dir = std.fs.cwd().openDir("/proc/self/task", .{ .iterate = true }) catch return;
-    defer dir.close();
-    var it = dir.iterate();
-    while (it.next() catch null) |entry| {
-        const tid = std.fmt.parseInt(std.os.linux.pid_t, entry.name, 10) catch continue;
-        setTid(tid, hint);
-    }
 }
