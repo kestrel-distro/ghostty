@@ -11,11 +11,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const c = @cImport({
-    @cInclude("sys/syscall.h");
-    @cInclude("unistd.h");
-});
-
 const FLAG: u64 = 1 << 40; // SCHED_FLAG_KESTREL_HINT
 const KEEP_POLICY: u64 = 0x08;
 const KEEP_PARAMS: u64 = 0x10;
@@ -35,7 +30,7 @@ const SchedAttrExt = extern struct {
 };
 
 /// Set the hint on one task. No-op (the syscall fails) on a stock kernel.
-pub fn setTid(tid: c.pid_t, hint: u32) void {
+pub fn setTid(tid: std.os.linux.pid_t, hint: u32) void {
     if (builtin.os.tag != .linux) return;
     var attr = SchedAttrExt{
         .size = @sizeOf(SchedAttrExt),
@@ -50,26 +45,31 @@ pub fn setTid(tid: c.pid_t, hint: u32) void {
         .sched_util_max = 0,
         .sched_ext_hint = hint,
     };
-    _ = c.syscall(c.SYS_sched_setattr, tid, &attr, @as(c_uint, 0));
+    _ = std.os.linux.syscall3(
+        .sched_setattr,
+        @as(usize, @bitCast(@as(isize, tid))),
+        @intFromPtr(&attr),
+        0,
+    );
 }
 
 /// Set the hint on the calling thread. Threads spawned after a
 /// setProcess() call are not covered; call this from the thread entrypoint.
 pub fn setCurrentThread(hint: u32) void {
     if (builtin.os.tag != .linux) return;
-    setTid(c.gettid(), hint);
+    setTid(std.os.linux.gettid(), hint);
 }
 
 /// Set the hint on every thread of this process.
 pub fn setProcess(hint: u32) void {
     if (builtin.os.tag != .linux) return;
-    setTid(c.getpid(), hint);
+    setTid(std.os.linux.getpid(), hint);
 
     var dir = std.fs.openDirAbsolute("/proc/self/task", .{ .iterate = true }) catch return;
     defer dir.close();
     var it = dir.iterate();
     while (it.next() catch null) |entry| {
-        const tid = std.fmt.parseInt(c.pid_t, entry.name, 10) catch continue;
+        const tid = std.fmt.parseInt(std.os.linux.pid_t, entry.name, 10) catch continue;
         setTid(tid, hint);
     }
 }
